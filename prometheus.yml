@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres_timescale:
+    image: timescale/timescaledb:latest-pg17
+    container_name: binance-postgres
+    environment:
+      POSTGRES_USER: collector
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: binance
+    volumes:
+      - D:/binance/postgresql:/var/lib/postgresql/data # Данные базы – на диск D:
+      - ./init-db:/docker-entrypoint-initdb.d # Скрипты инициализации
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    command: >
+      postgres
+      -c shared_preload_libraries='timescaledb,pg_stat_statements'
+      -c log_min_duration_statement=1000
+      -c log_line_prefix='%t [%p]: user=%u,db=%d,app=%a,client=%h '
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collector -d binance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  btcusdt-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: binance-collector:latest
+    container_name: binance-collector-btcusdt
+    depends_on:
+      postgres_timescale:
+        condition: service_healthy
+    environment:
+      - COLLECTOR_SYMBOLS=btcusdt,ethusdt
+      - COLLECTOR_TF=5m
+      - LOG_LEVEL=INFO
+      - DB_HOST=postgres_timescale
+      - DB_PORT=5432
+      - DB_USER=collector
+      - DB_PASSWORD=strongpassword
+      - DB_NAME=binance
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
