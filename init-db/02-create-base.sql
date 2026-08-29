@@ -19,3 +19,6 @@ CREATE TABLE IF NOT EXISTS "Symbol" (
 
 -- Таблица для хранения мета данных коллектора и филлера
 CREATE TABLE IF NOT EXISTS "Metadata" ("Key" TEXT PRIMARY KEY, "Value" TEXT);
+
+-- Создаём функции int_now для корректной работы гипертаблицы (обязательно перед настройкой гипертаблиц)
+CREATE OR REPLACE FUNCTION int_now_trade() RETURNS BIGINT LANGUAGE SQL STABLE AS $$ SELECT CAST(EXTRACT(EPOCH FROM NOW()) AS BIGINT); $$;
