@@ -25,7 +25,7 @@ SELECT set_integer_now_func('"Trade_ETHUSDT"', 'int_now_trade');
 -- Включить компрессию для гипертаблиц (обязательно перед добавлением политики)
 ALTER TABLE "Trade_ETHUSDT" SET (timescaledb.compress, timescaledb.compress_orderby = '"TradeId"');
 -- Включаем сжатие через 4 дней после закрытия чанка
-SELECT add_compression_policy('"Trade_ETHUSDT"', compress_after => 4 * 86400, schedule_interval => 3600);
+SELECT add_compression_policy('"Trade_ETHUSDT"', compress_after => 4 * 86400, schedule_interval => INTERVAL '1 hour');
 -- Автоматическое удаление данных старше 18 недель
 SELECT add_retention_policy('"Trade_ETHUSDT"', drop_after => 126 * 86400);
 
@@ -50,8 +50,8 @@ SELECT add_continuous_aggregate_policy('"Trade_ETHUSDT_5m"',
 CREATE MATERIALIZED VIEW "Trade_ETHUSDT_1h" WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
 SELECT time_bucket(3600, "Timestamp") AS "Timestamp",
        "Price",
-       SUM("Quantity")::BIGINT AS "Delta",
-       SUM(ABS("Quantity"))::BIGINT AS "Volume"
+       SUM("Delta")::BIGINT AS "Delta",
+       SUM("Volume")::BIGINT AS "Volume"
 FROM "Trade_ETHUSDT_5m" GROUP BY 1, 2;
 -- Автоматическое удаление данных старше 18 недель
 SELECT add_retention_policy('"Trade_ETHUSDT_1h"', drop_after => 127 * 86400);
@@ -64,8 +64,8 @@ SELECT add_continuous_aggregate_policy('"Trade_ETHUSDT_1h"',
 CREATE MATERIALIZED VIEW "Trade_ETHUSDT_6h" WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
 SELECT time_bucket(6 * 3600, "Timestamp") AS "Timestamp",
        "Price",
-       SUM("Quantity")::BIGINT AS "Delta",
-       SUM(ABS("Quantity"))::BIGINT AS "Volume"
+       SUM("Delta")::BIGINT AS "Delta",
+       SUM("Volume")::BIGINT AS "Volume"
 FROM "Trade_ETHUSDT_1h" GROUP BY 1, 2;
 -- Автоматическое удаление данных старше 18 недель
 SELECT add_retention_policy('"Trade_ETHUSDT_6h"', drop_after => 127 * 86400);
@@ -78,8 +78,8 @@ SELECT add_continuous_aggregate_policy('"Trade_ETHUSDT_6h"',
 CREATE MATERIALIZED VIEW "Trade_ETHUSDT_1d" WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
 SELECT time_bucket(24 * 3600, "Timestamp") AS "Timestamp",
        "Price",
-       SUM("Quantity")::BIGINT AS "Delta",
-       SUM(ABS("Quantity"))::BIGINT AS "Volume"
+       SUM("Delta")::BIGINT AS "Delta",
+       SUM("Volume")::BIGINT AS "Volume"
 FROM "Trade_ETHUSDT_6h" GROUP BY 1, 2;
 -- Автоматическое удаление данных старше 18 недель
 SELECT add_retention_policy('"Trade_ETHUSDT_1d"', drop_after => 127 * 86400);
